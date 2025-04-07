@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generation</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4299e1;
+            --primary-dark: #3182ce;
+            --secondary-color: #a0aec0;
+            --light-gray: #e2e8f0;
+            --dark-gray: #2d3748;
+            --success-color: #48bb78;
+            --danger-color: #f56565;
+            --warning-color: #ed8936;
+            --info-color: #4299e1;
+            --border-radius: 0.375rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.5;
+            color: var(--dark-gray);
+            background-color: #f7fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem 0;
+        }
+        
+        header h1 {
+            color: var(--dark-gray);
+            margin-bottom: 0.5rem;
+        }
+        
+        header p {
+            color: var(--secondary-color);
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border-color 0.15s ease-in-out;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        .button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .button-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .button-secondary:hover {
+            background-color: #718096;
+        }
+        
+        .drop-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            border: 2px dashed var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            cursor: pointer;
+            transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+        }
+        
+        .drop-zone:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(66, 153, 225, 0.05);
+        }
+        
+        .drop-zone-prompt {
+            text-align: center;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .drop-zone i {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .preview-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .preview-container img {
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .remove-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            color: var(--danger-color);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .slider {
+            flex-grow: 1;
+        }
+        
+        .slider-value {
+            min-width: 60px;
+            text-align: center;
+            padding: 0.25rem 0.5rem;
+            background-color: var(--light-gray);
+            border-radius: var(--border-radius);
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .seed-input {
+            flex-grow: 1;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .result-image {
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .parameters-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+        
+        .parameters-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .parameters-table td:first-child {
+            font-weight: 500;
+            width: 150px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        
+        .button-download {
+            background-color: var(--success-color);
+        }
+        
+        .button-download:hover {
+            background-color: #38a169;
+        }
+        
+        .button-new {
+            background-color: var(--info-color);
+        }
+        
+        .button-new:hover {
+            background-color: #3182ce;
+        }
+        
+        .char-count {
+            font-size: 0.875rem;
+            color: var(--secondary-color);
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+        
+        .text-danger {
+            color: var(--danger-color) !important;
+        }
+        
+        @media (max-width: 640px) {
+            .container {
+                padding: 0.5rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .parameters-table td:first-child {
+                width: 120px;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .highlighted {
+            border-color: #4299e1 !important;
+            background-color: rgba(66, 153, 225, 0.1) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Image Generation</h1>
+            <p>Upload an image and enter a text prompt to generate a new AI-modified image</p>
+        </header>
+        
+        <div class="card">
+            <div class="card-header">Image Generation</div>
+            <div class="card-body">
+                <form id="generationForm">
+                    <div class="form-group">
+                        <label for="prompt">Text Prompt</label>
+                        <textarea id="prompt" name="prompt" rows="3" placeholder="Describe what you want to see in the generated image..."></textarea>
+                        <div id="charCount" class="char-count">0/500</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Reference Image</label>
+                        <div id="dropZone" class="drop-zone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div class="drop-zone-prompt">
+                                <p>Drag & drop an image here or click to browse</p>
+                                <p><small>PNG, JPG or JPEG (max. 16MB)</small></p>
+                            </div>
+                            <input type="file" id="fileInput" name="file" accept=".png,.jpg,.jpeg" class="hidden">
+                            <div id="previewContainer" class="preview-container hidden">
+                                <img id="imagePreview" src="#" alt="Preview">
+                                <button type="button" id="removeImage" class="remove-button">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="guidance_scale">Guidance Scale</label>
+                        <div class="slider-container">
+                            <input type="range" id="guidance_scale" name="guidance_scale" class="slider" min="1" max="20" step="0.1" value="7.5">
+                            <span id="guidance_scale_value" class="slider-value">7.5</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="steps">Inference Steps</label>
+                        <div class="slider-container">
+                            <input type="range" id="steps" name="steps" class="slider" min="20" max="100" step="1" value="50">
+                            <span id="steps_value" class="slider-value">50</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="seed">Random Seed</label>
+                        <div class="input-group">
+                            <input type="number" id="seed" name="seed" class="seed-input" placeholder="Leave empty for random seed">
+                            <button type="button" id="randomSeed" class="button button-secondary">
+                                <i class="fas fa-random"></i> Random
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="generateBtn" class="button">
+                        <i class="fas fa-magic"></i> Generate Image
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="resultsCard" class="card hidden">
+            <div class="card-header">Generated Result</div>
+            <div class="card-body">
+                <div class="results-grid">
+                    <div>
+                        <h3>Input Image</h3>
+                        <img id="inputImage" src="#" alt="Input Image" class="result-image">
+                    </div>
+                    <div>
+                        <h3>Output Image</h3>
+                        <img id="outputImage" src="#" alt="Generated Image" class="result-image">
+                    </div>
+                </div>
+                
+                <h3>Generation Parameters</h3>
+                <table class="parameters-table">
+                    <tr>
+                        <td>Prompt:</td>
+                        <td id="resultPrompt"></td>
+                    </tr>
+                    <tr>
+                        <td>Guidance Scale:</td>
+                        <td id="resultGuidance"></td>
+                    </tr>
+                    <tr>
+                        <td>Inference Steps:</td>
+                        <td id="resultSteps"></td>
+                    </tr>
+                    <tr>
+                        <td>Seed:</td>
+                        <td id="resultSeed"></td>
+                    </tr>
+                </table>
+                
+                <div class="action-buttons">
+                    <button id="downloadBtn" class="button button-download">
+                        <i class="fas fa-download"></i> Download Image
+                    </button>
+                    <button id="newGenerationBtn" class="button button-new">
+                        <i class="fas fa-plus"></i> New Generation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div class="spinner" style="border: 5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 5px solid #4299e1; width: 50px; height: 50px; animation: spin 1s linear infinite;"></div>
+            <div style="margin-top: 15px; color: white; font-weight: bold;">Generating image...</div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const generationForm = document.getElementById('generationForm');
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const previewContainer = document.getElementById('previewContainer');
+            const imagePreview = document.getElementById('imagePreview');
+            const removeImageBtn = document.getElementById('removeImage');
+            const guidanceScaleSlider = document.getElementById('guidance_scale');
+            const guidanceScaleValue = document.getElementById('guidance_scale_value');
+            const stepsSlider = document.getElementById('steps');
+            const stepsValue = document.getElementById('steps_value');
+            const seedInput = document.getElementById('seed');
+            const randomSeedBtn = document.getElementById('randomSeed');
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const resultsCard = document.getElementById('resultsCard');
+            const inputImage = document.getElementById('inputImage');
+            const outputImage = document.getElementById('outputImage');
+            const resultPrompt = document.getElementById('resultPrompt');
+            const resultGuidance = document.getElementById('resultGuidance');
+            const resultSteps = document.getElementById('resultSteps');
+            const resultSeed = document.getElementById('resultSeed');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const newGenerationBtn = document.getElementById('newGenerationBtn');
+
+            // Make sure loading overlay is hidden on page load
+            loadingOverlay.classList.add('hidden');
+
+            // Drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropZone.classList.add('highlighted');
+            }
+
+            function unhighlight() {
+                dropZone.classList.remove('highlighted');
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    fileInput.files = files;
+                    updateImagePreview(files[0]);
+                }
+            }
+
+            // Click on drop zone to open file picker
+            dropZone.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            // Image preview functionality
+            fileInput.addEventListener('change', function() {
+                if (this.files.length) {
+                    updateImagePreview(this.files[0]);
+                }
+            });
+
+            function updateImagePreview(file) {
+                // Check if file is an image
+                if (!file.type.match('image.*')) {
+                    showNotification('Please select an image file (PNG or JPEG).', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                    document.querySelector('.drop-zone-prompt').classList.add('hidden');
+                    document.querySelector('.drop-zone i').classList.add('hidden');
+                };
+                
+                reader.readAsDataURL(file);
+            }
+
+            removeImageBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                previewContainer.classList.add('hidden');
+                document.querySelector('.drop-zone-prompt').classList.remove('hidden');
+                document.querySelector('.drop-zone i').classList.remove('hidden');
+            });
+
+            // Parameter sliders
+            guidanceScaleSlider.addEventListener('input', function() {
+                guidanceScaleValue.textContent = this.value;
+            });
+
+            stepsSlider.addEventListener('input', function() {
+                stepsValue.textContent = this.value;
+            });
+
+            // Random seed button
+            randomSeedBtn.addEventListener('click', function() {
+                const randomSeed = Math.floor(Math.random() * 1000000);
+                seedInput.value = randomSeed;
+            });
+
+            // Form submission
+            generationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (!validateForm()) {
+                    return;
+                }
+                
+                const formData = new FormData(this);
+                
+                // Show loading overlay
+                loadingOverlay.classList.remove('hidden');
+                
+                // Submit form
+                fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Generation failed');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading overlay
+                    loadingOverlay.classList.add('hidden');
+                    
+                    // Display results
+                    displayResults(data);
+                })
+                .catch(error => {
+                    // Hide loading overlay
+                    loadingOverlay.classList.add('hidden');
+                    
+                    showNotification(error.message, 'error');
+                });
+            });
+
+            function validateForm() {
+                // Check if prompt is entered
+                const prompt = document.getElementById('prompt').value.trim();
+                if (!prompt) {
+                    showNotification('Please enter a text prompt.', 'error');
+                    return false;
+                }
+                
+                // Check if file is selected
+                if (!fileInput.files.length) {
+                    showNotification('Please select a reference image.', 'error');
+                    return false;
+                }
+                
+                return true;
+            }
+
+            function displayResults(data) {
+                // Set images
+                inputImage.src = data.input_image;
+                outputImage.src = data.output_image;
+                
+                // Set parameters
+                resultPrompt.textContent = data.parameters.prompt;
+                resultGuidance.textContent = data.parameters.guidance_scale;
+                resultSteps.textContent = data.parameters.steps;
+                resultSeed.textContent = data.parameters.seed;
+                
+                // Show results card
+                resultsCard.classList.remove('hidden');
+                
+                // Scroll to results
+                resultsCard.scrollIntoView({ behavior: 'smooth' });
+                
+                // Setup download button
+                downloadBtn.onclick = function() {
+                    downloadImage(data.output_image, 'generated-image.png');
+                };
+            }
+
+            // Download image function
+            function downloadImage(src, filename) {
+                fetch(src)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    })
+                    .catch(error => {
+                        console.error('Download failed:', error);
+                        showNotification('Download failed. Please try again.', 'error');
+                    });
+            }
+
+            // New generation button
+            newGenerationBtn.addEventListener('click', function() {
+                resultsCard.classList.add('hidden');
+                document.documentElement.scrollTop = 0;
+            });
+
+            // Notification function
+            function showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                
+                // Add icon based on type
+                let icon = 'info-circle';
+                if (type === 'error') icon = 'exclamation-circle';
+                if (type === 'success') icon = 'check-circle';
+                
+                notification.innerHTML = `
+                    <i class="fas fa-${icon}"></i>
+                    <span>${message}</span>
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                `;
+                
+                // Style the notification
+                Object.assign(notification.style, {
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    padding: '12px 15px',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    maxWidth: '400px',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                    zIndex: '1000',
+                    animation: 'slideIn 0.3s ease-out forwards'
+                });
+                
+                // Different colors based on type
+                if (type === 'error') {
+                    notification.style.backgroundColor = '#f8d7da';
+                    notification.style.color = '#721c24';
+                    notification.style.border = '1px solid #f5c6cb';
+                } else if (type === 'success') {
+                    notification.style.backgroundColor = '#d4edda';
+                    notification.style.color = '#155724';
+                    notification.style.border = '1px solid #c3e6cb';
+                } else {
+                    notification.style.backgroundColor = '#d1ecf1';
+                    notification.style.color = '#0c5460';
+                    notification.style.border = '1px solid #bee5eb';
+                }
+                
+                // Add close button functionality
+                const closeBtn = notification.querySelector('.close-btn');
+                closeBtn.style.backgroundColor = 'transparent';
+                closeBtn.style.border = 'none';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.style.marginLeft = 'auto';
+                
+                closeBtn.addEventListener('click', function() {
+                    document.body.removeChild(notification);
+                });
+                
+                // Add to DOM
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 5000);
+            }
+
+            // Add keyup listener to prompt for character count
+            const promptInput = document.getElementById('prompt');
+            const charCount = document.getElementById('charCount');
+            
+            if (promptInput && charCount) {
+                promptInput.addEventListener('keyup', function() {
+                    const count = this.value.length;
+                    charCount.textContent = `${count}/500`;
+                    
+                    if (count > 500) {
+                        charCount.classList.add('text-danger');
+                    } else {
+                        charCount.classList.remove('text-danger');
+                    }
+                });
+            }
+
+            // Add hover effects for buttons
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.opacity = '0.9';
+                });
+                button.addEventListener('mouseleave', function() {
+                    this.style.opacity = '1';
+                });
+            });
+
+            // Initialize random seed on page load
+            if (randomSeedBtn && seedInput) {
+                randomSeedBtn.click();
+            }
+
+            // Add support for Enter key to submit when in prompt field
+            if (promptInput) {
+                promptInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        generationForm.dispatchEvent(new Event('submit'));
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
